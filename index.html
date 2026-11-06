@@ -974,7 +974,7 @@ function refreshOpenState(){
   if($('closed-note'))  $('closed-note').style.display  = open ? 'none' : 'block';
 }
 
-// Aviso de fornadas: "Saindo agora" ou "Próxima fornada às ..."
+// Aviso de fornadas: "Saindo agora" ou " às ..."
 function refreshOven(){
   const el=$('oven-bar'); if(!el) return;
   if(!FORNADAS.length){ el.classList.remove('show'); return; }
@@ -986,7 +986,7 @@ function refreshOven(){
   } else {
     const nx=list.find(f=>f.min>cur);
     if(!nx){ el.classList.remove('show'); return; }
-    el.innerHTML=`${ico('clock')} Próxima fornada às <b>${esc(nx.hora)}</b>: ${esc(nx.itens)}`;
+    el.innerHTML=`${ico('clock')} Promoção às <b>${esc(nx.hora)}</b>: ${esc(nx.itens)}`;
   }
   el.classList.add('show');
 }
