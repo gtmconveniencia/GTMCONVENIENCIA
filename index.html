@@ -959,11 +959,14 @@ function isOpen(s){
   if(s.is_force_closed) return false;
   if(!s.hours_open||!s.hours_close) return true;
   const now=new Date(), d=now.getDay();
-  if(s.open_days&&!s.open_days.includes(d)) return false;
   const [oh,om]=s.hours_open.split(':').map(Number);
   const [ch,cm]=s.hours_close.split(':').map(Number);
-  const cur=now.getHours()*60+now.getMinutes();
-  return cur>=oh*60+om && cur<ch*60+cm;
+  const start=oh*60+om, end=ch*60+cm, cur=now.getHours()*60+now.getMinutes();
+  const dayOk=x=>!s.open_days||s.open_days.includes(x);
+  if(end>start) return dayOk(d) && cur>=start && cur<end;          // mesmo dia (ex: 09:00 às 20:00)
+  if(end===start) return dayOk(d);                                  // 24h
+  // fecha depois da meia-noite (ex: 09:00 às 00:00 ou 18:00 às 02:00)
+  return (dayOk(d) && cur>=start) || (dayOk((d+6)%7) && cur<end);
 }
 
 // Atualiza o selo ABERTO/FECHADO e o aviso dentro da sacola (roda a cada minuto)
