@@ -71,6 +71,31 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
 /* ── DELIVERY BAR ── */
 .del-bar{background:var(--caramel);color:#fff;padding:10px 28px;text-align:center;font-size:.87rem;font-weight:500}
 
+/* ── AVISO DE FECHAMENTO ── */
+.close-bar{display:none;background:#1E1B14;color:#F0DC95;padding:9px 20px;text-align:center;font-size:.85rem;font-weight:600;border-bottom:1px solid rgba(255,255,255,.08)}
+.close-bar.show{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.close-bar b{color:#fff}
+.close-bar.urgent{background:#B3261E;color:#fff}
+.close-bar.urgent b{color:#fff}
+.close-bar .ic{width:15px;height:15px}
+
+/* ── AVISO +18 ── */
+.age-note{display:flex;align-items:flex-start;gap:9px;background:#FDECEA;border:1px solid #F5B7B1;color:#7B241C;border-radius:10px;padding:9px 11px;font-size:.78rem;line-height:1.45;margin:6px 0 2px}
+.age-note .age-tag{flex-shrink:0;background:#B3261E;color:#fff;font-weight:800;font-size:.72rem;border-radius:50px;padding:2px 8px;letter-spacing:.02em}
+.age-note b{font-weight:700}
+.footer-age{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;color:rgba(255,255,255,.6);font-size:.78rem;padding:0 0 10px}
+.footer-age .age-tag{background:#B3261E;color:#fff;font-weight:800;font-size:.72rem;border-radius:50px;padding:2px 9px}
+
+/* ── GELO NA SACOLA ── */
+.ice-card{display:flex;align-items:center;gap:11px;background:#EAF4FB;border:1.5px solid #AED6F1;border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.ice-card .ice-img{width:46px;height:46px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
+.ice-card .ice-img img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0}
+.ice-card .ice-txt{flex:1;min-width:0}
+.ice-card .ice-t{font-weight:800;color:#1A5276;font-size:.92rem;line-height:1.2}
+.ice-card .ice-s{font-size:.76rem;color:#2E6A8E;margin-top:2px}
+.ice-card button{background:#1A5276;color:#fff;border:none;border-radius:50px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:background .2s}
+.ice-card button:hover{background:#154360}
+
 /* ── PROMO BANNERS ── */
 .banners-section{padding:20px 20px 0;max-width:1100px;margin:0 auto}
 .banners-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
@@ -258,6 +283,9 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
 /* ── BARRA FIXA DA SACOLA ── */
 .cart-bar{position:fixed;left:50%;bottom:14px;transform:translate(-50%,120px);width:min(520px,calc(100% - 24px));background:var(--brown);color:#fff;border:none;border-radius:50px;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;z-index:150;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .3s cubic-bezier(.4,0,.2,1),background .2s}
 .cart-bar.show{transform:translate(-50%,0)}
+/* reserva espaço no fim da página (rodapé) para a barra fixa não cobrir o conteúdo */
+body{padding-bottom:env(safe-area-inset-bottom,0px)}
+body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .cart-bar:hover{background:var(--brown-m)}
 .cart-bar .cb-l{display:flex;align-items:center;gap:10px}
 .cart-bar .cb-n{background:var(--caramel);color:#fff;min-width:24px;height:24px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:.78rem;padding:0 6px}
@@ -478,7 +506,7 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
   <div class="lico">
     <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" color="#E3C158"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
   </div>
-  <div class="ltxt">GTM CONVENIÊNCIA</div>
+  <div class="ltxt">CONVENIÊNCIA</div>
   <div class="lsub">Carregando o cardápio...</div>
 </div>
 
@@ -528,7 +556,7 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
 
 <div class="hero">
   <p class="hero-tag">Os Melhores Produtos Todos Os Dias</p>
-  <h1>As melhores bebidas do<em> Bairro</em><br>Você encontra aqui </h1>
+  <h1>Gelada na sua porta em até<em> 40 min</em><br></h1>
   <div class="hero-chips">
     <span class="chip">
       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -547,6 +575,9 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
 </div>
 
 <div class="del-bar" id="del-bar"> <strong>Entrega grátis</strong> das 16h às 19h</div>
+
+<!-- AVISO DE FECHAMENTO (aparece só nas últimas 2h de funcionamento) -->
+<div class="close-bar" id="close-bar" role="status" aria-live="polite"></div>
 
 <!-- AVISO DE FORNADAS -->
 <div class="oven-bar" id="oven-bar"></div>
@@ -579,7 +610,7 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
     <div class="footer-col">
       <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 000-7.8z"/></svg>Redes Sociais</h4>
       <div class="footer-social">
-        <a href="https://www.instagram.com/gtm_conveniencia/" title="Instagram" aria-label="Instagram">
+        <a href="" id="footer-ig" target="_blank" rel="noopener" title="Instagram" aria-label="Instagram">
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
         </a>
         <a href="#" title="WhatsApp" aria-label="WhatsApp" id="footer-wpp2">
@@ -599,6 +630,7 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
     </div>
   </div>
   <div class="footer-bottom">
+    <div class="footer-age"><span class="age-tag">+18</span><span>Venda proibida para menores de 18 anos. Beba com moderação.</span></div>
     © 2025 DD · Todos os direitos reservados.
   </div>
 </footer>
@@ -758,6 +790,7 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
         <div id="total-final-row" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:1.1rem;font-weight:800;color:var(--brown)">
           <span>Total</span><span id="total-final-val">R$ 0,00</span>
         </div>
+        <div class="age-note"><span class="age-tag">+18</span><span><b> Venda proibida para menores de 18 anos.</b></span></div>
         <button class="btn-wpp" id="btn-send" onclick="sendOrder()">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.99 2C6.472 2 2 6.473 2 11.99c0 1.96.527 3.793 1.443 5.365L2 22l4.759-1.424A9.955 9.955 0 0011.99 22C17.507 22 22 17.527 22 11.99 22 6.474 17.507 2 11.99 2zm0 18.18c-1.703 0-3.286-.47-4.636-1.284l-.33-.198-3.44 1.029.98-3.37-.214-.345A8.165 8.165 0 013.82 11.99c0-4.512 3.671-8.18 8.17-8.18 4.502 0 8.17 3.668 8.17 8.18 0 4.51-3.668 8.19-8.17 8.19z"/></svg>
           <span id="btn-send-txt">Finalizar pedido</span>
@@ -943,6 +976,10 @@ function applySettings(){
   if($('footer-wpp'))  $('footer-wpp').href  = `https://wa.me/${wn}`;
   if($('footer-wpp2')) $('footer-wpp2').href = `https://wa.me/${wn}`;
 
+  // instagram do rodapé: vem do admin (campo "Instagram da loja"); se vazio, mantém o link padrão do HTML
+  const ig = $('footer-ig');
+  if(ig && /^https:\/\/(www\.)?instagram\.com\//i.test(s.instagram_url||'')) ig.href = s.instagram_url;
+
   // announcement — só aplica se o elemento existir
   const ann = $('announce');
   if(ann){
@@ -975,6 +1012,30 @@ function refreshOpenState(){
   if($('badge-open'))   $('badge-open').style.display   = open ? '' : 'none';
   if($('badge-closed')) $('badge-closed').style.display = open ? 'none' : '';
   if($('closed-note'))  $('closed-note').style.display  = open ? 'none' : 'block';
+  refreshClosing(open);
+}
+
+// Minutos que faltam para fechar (null = não se aplica: fechado, 24h ou sem horário)
+function minutesToClose(s){
+  if(!s.hours_open || !s.hours_close) return null;
+  const now=new Date(), cur=now.getHours()*60+now.getMinutes();
+  const [oh,om]=s.hours_open.split(':').map(Number);
+  const [ch,cm]=s.hours_close.split(':').map(Number);
+  const start=oh*60+om, end=ch*60+cm;
+  if(end===start) return null;                       // 24h
+  if(end>start) return end-cur;                      // fecha no mesmo dia
+  return cur>=start ? (1440-cur)+end : end-cur;      // fecha depois da meia-noite (ex: 09:00 às 00:00)
+}
+
+// "Fechamos em 1h 40min" — aparece só nas últimas 2h e fica vermelho nos últimos 30min
+function refreshClosing(open){
+  const el=$('close-bar'); if(!el) return;
+  const rem = open ? minutesToClose(settings) : null;
+  if(rem===null || rem<=0 || rem>120){ el.className='close-bar'; el.innerHTML=''; return; }
+  const h=Math.floor(rem/60), m=rem%60;
+  const txt = h>0 ? `${h}h${m?' '+m+'min':''}` : `${m}min`;
+  el.innerHTML = `${ico('clock')} <span>Fechamos em <b>${txt}</b> — faça seu pedido agora!</span>`;
+  el.className = 'close-bar show' + (rem<=30 ? ' urgent' : '');
 }
 
 // Aviso de fornadas: "Saindo agora" ou " às ..."
@@ -1143,25 +1204,94 @@ function notifyMe(id){
   window.open(`https://wa.me/${wn}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
-/* ═══ SUGESTÕES NA SACOLA ═══ */
+/* ═══ SUGESTÕES NA SACOLA (combinam com o que está na sacola) ═══ */
+// Tipo de produto, identificado pelo nome e pela categoria
+const SG_TAGS = {
+  spirit : /vodka|whisk|gin\b|cacha[cç]a|\brum\b|tequila|licor|conhaque|destilad|campari|aperol|smirnoff|absolut|jack daniel|jim beam|ypi[oó]ca|\bpitu\b|\b51\b|velho barreiro|buchanan|red label|black label|passport|vinho|espumante|sidra|brisa|psico/,
+  beer   : /cerveja|chopp?\b|heineken|skol|brahma|antarctica|budweiser|stella|corona|devassa|itaipava|amstel|eisenbahn|bohemia|spaten|colorado|petra|schin|kaiser|\bsol\b|long neck/,
+  energy : /energ[eé]tico|red bull|monster|\btnt\b|baly|fusion|isot[oô]nico|gatorade|powerade/,
+  soda   : /refrigerante|coca|pepsi|guaran[aá]|fanta|sprite|tuchaua|schweppes|t[oô]nica|suco|[aá]gua|h2oh|ch[aá] gelado|mate/,
+  ice    : /gelo/,
+  bbq    : /carv[aã]o|churrasc|espeto|acendedor|sal grosso|tempero|farofa|vinagrete|lingui[cç]a|p[aã]o de alho|lenha/,
+  snack  : /salgadinho|amendoim|batata|petisco|biscoito|bolacha|chocolate|bombom|doce|ruffles|doritos|cheetos|fandangos|pringles|snack|castanha|torresmo|pipoca|chiclete|bala\b/
+};
+// Para cada tipo no carrinho, o que combina (do mais ao menos importante)
+const SG_COMBO = {
+  spirit : ['energy','soda','ice','snack'],
+  beer   : ['ice','snack','bbq','beer'],
+  energy : ['spirit','ice','snack'],
+  soda   : ['ice','snack','beer'],
+  ice    : ['beer','soda','spirit'],
+  bbq    : ['beer','ice','soda','bbq'],
+  snack  : ['soda','beer','ice']
+};
+function sgTags(name, catId){
+  const cat = categories.find(c=>String(c.id)===String(catId));
+  const t = norm(name)+' | '+norm(cat?cat.name:'');
+  return Object.keys(SG_TAGS).filter(k=>SG_TAGS[k].test(t));
+}
+// Número estável a partir do conteúdo da sacola: muda quando a sacola muda, mas não "pisca" a cada render
+function sgSeed(s){ let h=7; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
+
 function renderSugg(){
   const box=$('sugg'); if(!box) return;
   const inCart=new Set(cart.map(i=>i.id));
-  const catsInCart=new Set(cart.map(i=>{ const p=products.find(x=>x.id===i.id); return p?String(p.category_id):''; }));
-  const re=/bebida|suco|caf[eé]|refri|leite|chocolate/i;
-  const list=products
-    .filter(p=>p.is_active!==false && p.stock!==0 && !inCart.has(p.id) && !hasVars(p))
-    .map(p=>{
-      const cat=categories.find(c=>String(c.id)===String(p.category_id));
-      let sc=0;
-      if(cat && re.test(cat.name)) sc+=3;
-      if(p.highlight==='best'||p.highlight==='fav') sc+=2;
-      if(!catsInCart.has(String(p.category_id))) sc+=1;
-      return {p,sc};
-    })
-    .filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,4);
-  if(!list.length){ box.innerHTML=''; return; }
-  box.innerHTML=`<div class="sugg-t">Peça também</div><div class="sugg-row">`+list.map(({p})=>
+
+  // Tipos de produto que já estão na sacola
+  const cartTags=new Set();
+  cart.forEach(i=>{
+    const p=products.find(x=>x.id===i.id);
+    sgTags(i.name, p?p.category_id:'').forEach(t=>cartTags.add(t));
+  });
+
+  // Tem cerveja ou destilado na sacola e nenhum gelo? Oferece o gelo em destaque
+  const ice=((cartTags.has('beer')||cartTags.has('spirit')) && !cartTags.has('ice'))
+    ? products.filter(p=>p.is_active!==false && p.stock!==0 && /gelo/.test(norm(p.name))).sort((a,b)=>a.price-b.price)[0]
+    : null;
+  const iceHTML=ice ? `<div class="ice-card">
+      <div class="ice-img"><span>${ico('bag','ph')}</span>${ice.image_url?`<img src="${esc(ice.image_url)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
+      <div class="ice-txt"><div class="ice-t">Falta gelo? +${fp(ice.price)}</div><div class="ice-s">${esc(ice.name)}</div></div>
+      <button type="button" onclick="quickAdd(${ice.id})" aria-label="Adicionar ${esc(ice.name)}">Adicionar</button>
+    </div>` : '';
+
+  // Candidatos: ativos, com estoque, fora da sacola, sem sabores (esses abrem o modal)
+  const seed=sgSeed(cart.map(i=>i._key).sort().join('|'));
+  const cand=products
+    .filter(p=>p.is_active!==false && p.stock!==0 && !inCart.has(p.id) && !hasVars(p) && !(ice && p.id===ice.id))
+    .map(p=>({p, tags:sgTags(p.name,p.category_id), r:sgSeed(seed+'#'+p.id)}));
+
+  // Prioridade de cada tipo que combina com a sacola (soma quando vários itens pedem o mesmo)
+  const weight={};
+  cartTags.forEach(ct=>(SG_COMBO[ct]||[]).forEach((tag,idx)=>{
+    if(tag==='ice' && ice) return;                    // o gelo já está no card azul
+    weight[tag]=(weight[tag]||0)+(4-idx);
+  }));
+  const order=Object.keys(weight).sort((a,b)=>weight[b]-weight[a]);
+
+  // Escolhe 1 produto de cada tipo (rodízio) até completar 4
+  const picked=[], used=new Set();
+  const pickFrom=tag=>{
+    const pool=cand.filter(c=>!used.has(c.p.id) && c.tags.includes(tag))
+      .sort((a,b)=>((b.p.highlight==='best'||b.p.highlight==='fav')-(a.p.highlight==='best'||a.p.highlight==='fav')) || (a.r-b.r));
+    if(pool.length){ picked.push(pool[0].p); used.add(pool[0].p.id); return true; }
+    return false;
+  };
+  let guard=0;
+  while(picked.length<4 && order.length && guard++<8){
+    let any=false;
+    for(const tag of order){ if(picked.length>=4) break; if(pickFrom(tag)) any=true; }
+    if(!any) break;
+  }
+  // Completa com os mais pedidos / favoritos, variando conforme a sacola
+  if(picked.length<4){
+    cand.filter(c=>!used.has(c.p.id))
+      .sort((a,b)=>(((b.p.highlight==='best'||b.p.highlight==='fav')?1:0)-((a.p.highlight==='best'||a.p.highlight==='fav')?1:0)) || (a.r-b.r))
+      .slice(0,4-picked.length).forEach(c=>{ picked.push(c.p); used.add(c.p.id); });
+  }
+
+  if(!picked.length){ box.innerHTML=iceHTML; return; }
+  const title = order.length ? 'Combina com seu pedido' : 'Peça também';
+  box.innerHTML=iceHTML+`<div class="sugg-t">${title}</div><div class="sugg-row">`+picked.map(p=>
     `<div class="sg"><div class="sg-img"><span>${ico('bread','ph')}</span>${p.image_url?`<img src="${esc(p.image_url)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
       <div class="sg-n">${esc(p.name)}</div>
       <div class="sg-f"><span class="sg-p">${fp(p.price)}</span><button class="btn-add" onclick="quickAdd(${p.id})" aria-label="Adicionar ${esc(p.name)}">+</button></div></div>`
@@ -1580,6 +1710,7 @@ function updateBar(){
   const n=cart.reduce((a,i)=>a+i.qty,0);
   const sub=cart.reduce((a,i)=>a+i.price*i.qty,0);
   $('cart-bar').classList.toggle('show', cart.length>0);
+  document.body.classList.toggle('cart-on', cart.length>0);
   $('cb-n').textContent=n;
   $('cb-total').textContent=fp(sub);
 }
