@@ -671,7 +671,7 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
       <div class="mdesc"  id="mo-desc"></div>
       <!-- VARIAÇÕES (sabores, tamanhos, etc.) -->
       <div class="var-section" id="mo-var-section" style="display:none">
-        <span class="var-label" id="mo-var-label">Escolha o sabor</span>
+        <span class="var-label" id="mo-var-label">Escolha </span>
         <div class="var-chips" id="mo-var-chips"></div>
       </div>
       <div class="qty-row">
@@ -1583,7 +1583,7 @@ function buildVariations(p){
   curVariation = null;
   if(!vars.length){ sec.style.display='none'; chips.innerHTML=''; return; }
   sec.style.display='';
-  label.textContent = p.variation_label || 'Escolha o sabor';
+  label.textContent = p.variation_label || 'Escolha ';
   chips.innerHTML = vars.map((v,i)=>{
     const isOut = v.stock===0;
     return `<span class="var-chip${isOut?' out':''}" data-idx="${i}"
