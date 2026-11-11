@@ -65,6 +65,7 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
 .hero-tag{font-size:.73rem;letter-spacing:.22em;text-transform:uppercase;color:var(--caramel-l);margin-bottom:12px;position:relative}
 .hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,4.5vw,3rem);font-weight:900;color:var(--cream);line-height:1.1;margin-bottom:14px;position:relative}
 .hero h1 em{font-style:italic;color:var(--caramel-l)}
+.hero.has-img .hero-tag,.hero.has-img h1,.hero.has-img .hero-chips{text-shadow:0 2px 14px rgba(0,0,0,.65)}
 .hero-chips{display:flex;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:20px;position:relative}
 .chip{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.7);font-size:.82rem}
 .chip svg{flex-shrink:0}
@@ -671,7 +672,7 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
       <div class="mdesc"  id="mo-desc"></div>
       <!-- VARIAÇÕES (sabores, tamanhos, etc.) -->
       <div class="var-section" id="mo-var-section" style="display:none">
-        <span class="var-label" id="mo-var-label">Escolha </span>
+        <span class="var-label" id="mo-var-label">Escolha o sabor</span>
         <div class="var-chips" id="mo-var-chips"></div>
       </div>
       <div class="qty-row">
@@ -1004,6 +1005,17 @@ function applySettings(){
   const igOk  = /^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._]+/i.test(s.instagram_url||'');
   const igUrl = igOk ? s.instagram_url : '';
   const igUser= igOk ? igUrl.replace(/^https:\/\/(www\.)?instagram\.com\//i,'').split(/[/?#]/)[0] : '';
+  // foto de fundo do topo (admin: "Fundo do topo da loja"); sem foto, mantém o degradê padrão do CSS
+  const hero=document.querySelector('.hero');
+  if(hero){
+    const hi=String(s.hero_image||'').trim();
+    if(/^https:\/\//i.test(hi)){
+      const ov=Math.min(95,Math.max(30,parseInt(s.hero_overlay,10)||65))/100;
+      hero.style.background=`linear-gradient(145deg,rgba(15,14,10,${ov.toFixed(2)}) 0%,rgba(20,18,12,${(ov*.92).toFixed(2)}) 55%,rgba(90,66,8,${(ov*.8).toFixed(2)}) 100%),url("${encodeURI(hi)}") center/cover no-repeat`;
+      hero.classList.add('has-img');
+    } else { hero.style.background=''; hero.classList.remove('has-img'); }
+  }
+
   // traçar rota até a loja: usa o campo "Endereço para traçar rota" do admin (se vazio, o endereço exibido)
   const rUrl = routeUrl(s.route_address || s.address || ($('h-addr')?$('h-addr').textContent:''));
   if($('h-route'))      $('h-route').href      = rUrl;
@@ -1583,7 +1595,7 @@ function buildVariations(p){
   curVariation = null;
   if(!vars.length){ sec.style.display='none'; chips.innerHTML=''; return; }
   sec.style.display='';
-  label.textContent = p.variation_label || 'Escolha ';
+  label.textContent = p.variation_label || 'Formato de Compra';
   chips.innerHTML = vars.map((v,i)=>{
     const isOut = v.stock===0;
     return `<span class="var-chip${isOut?' out':''}" data-idx="${i}"
