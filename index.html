@@ -71,7 +71,9 @@ header{background:var(--brown);position:sticky;top:0;z-index:100;box-shadow:0 2p
 .chip svg{flex-shrink:0}
 a.chip{text-decoration:none;transition:color .2s}
 a.chip:hover{color:var(--caramel-l)}
-.route-go{color:var(--caramel-l);font-weight:700;white-space:nowrap;margin-left:2px}
+.route-go{color:var(--caramel-l);font-weight:700;white-space:nowrap;margin-left:4px;padding:3px 11px;border-radius:50px;background:rgba(227,193,88,.14);border:1px solid rgba(227,193,88,.4);animation:glowGold 2s infinite}
+@keyframes glowGold{0%,100%{box-shadow:0 0 0 0 rgba(227,193,88,.45)}50%{box-shadow:0 0 0 7px rgba(227,193,88,0)}}
+@media(prefers-reduced-motion:reduce){.route-go{animation:none}}
 .footer-route{display:inline-block;margin-top:8px;color:var(--caramel-l);font-size:.82rem;font-weight:700;text-decoration:none}
 .footer-route:hover{text-decoration:underline}
 
@@ -317,6 +319,9 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .ok-pix textarea{width:100%;height:78px;border:1.5px solid var(--border);border-radius:10px;padding:9px 11px;font-size:.72rem;font-family:monospace;color:var(--text);resize:none;background:var(--warm)}
 .ok-pix .btn-copy{width:100%;margin-top:7px;background:var(--brown);color:#fff;border:none;border-radius:10px;padding:11px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:background .2s}
 .ok-pix .btn-copy:hover{background:var(--caramel-d)}
+#rvbg .btn-copy{width:100%;margin-top:12px;background:var(--brown);color:#fff;border:none;border-radius:50px;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.92rem;cursor:pointer;transition:background .2s}
+#rvbg .btn-copy:hover{background:var(--caramel-d)}
+#rvbg .btn-copy:disabled{opacity:.6;cursor:default}
 .ok-pix .hint{font-size:.76rem;color:var(--text-l);margin-top:7px;line-height:1.5}
 .ok-close{margin-top:10px;background:none;border:none;color:var(--text-l);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;padding:8px 14px}
 .ok-close:hover{color:var(--brown)}
@@ -331,6 +336,9 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .reorder .r-s{font-size:.8rem;color:var(--text-l);line-height:1.45}
 .reorder button{background:var(--caramel);color:#fff;border:none;border-radius:50px;padding:10px 20px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:background .2s;white-space:nowrap}
 .reorder button:hover{background:var(--caramel-d)}
+.reorder{position:relative;padding-right:46px}
+.reorder .r-x{position:absolute;top:8px;right:8px;width:28px;height:28px;padding:0;border-radius:50%;background:none;color:var(--text-l);display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .2s,background .2s}
+.reorder .r-x:hover{background:rgba(0,0,0,.07);color:var(--brown);opacity:1}
 .btn-notify{background:none;border:1.5px solid var(--caramel);color:var(--caramel-d);border-radius:50px;padding:6px 11px;font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
 .btn-notify:hover{background:var(--caramel);color:#fff}
 .sugg{margin-top:8px}
@@ -1204,12 +1212,18 @@ function ctlHTML(p){
 function getLast(){
   try{ const a=JSON.parse(lsGet('pd_last')||'[]'); return Array.isArray(a)?a:[]; }catch(_){ return []; }
 }
+// Assinatura do último pedido: ao fazer um pedido novo ela muda e o card volta a aparecer
+function lastSig(){ return getLast().map(i=>i._key+':'+i.qty).join('|'); }
+function dismissReorder(btn){
+  lsSet('pd_reorder_off', lastSig());
+  const c=btn.closest('.reorder'); if(c) c.remove();
+}
 function topHTML(){
   let h='';
   const ok=getLast().filter(it=>{ const p=products.find(x=>x.id===it.id); return p && p.stock!==0 && p.is_active!==false; });
-  if(ok.length){
+  if(ok.length && lsGet('pd_reorder_off')!==lastSig()){
     const resumo=ok.slice(0,3).map(i=>`${i.qty}x ${esc(i.name)}`).join(', ')+(ok.length>3?` e mais ${ok.length-3}`:'');
-    h+=`<div class="reorder"><div class="r-txt"><div class="r-t">Pedir de novo?</div><div class="r-s">Seu último pedido: ${resumo}</div></div><button onclick="repeatLast()">Repetir pedido</button></div>`;
+    h+=`<div class="reorder"><div class="r-txt"><div class="r-t">Pedir de novo?</div><div class="r-s">Seu último pedido: ${resumo}</div></div><button onclick="repeatLast()">Repetir pedido</button><button class="r-x" onclick="dismissReorder(this)" aria-label="Remover este lembrete" title="Remover"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`;
   }
   const best=products.filter(p=>p.highlight==='best'&&p.is_active!==false&&p.stock!==0).slice(0,8);
   if(best.length){
