@@ -325,6 +325,27 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .ok-pix .hint{font-size:.76rem;color:var(--text-l);margin-top:7px;line-height:1.5}
 .ok-close{margin-top:10px;background:none;border:none;color:var(--text-l);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;padding:8px 14px}
 .ok-close:hover{color:var(--brown)}
+.cep-help{flex:0 0 auto;background:#fff;color:var(--caramel-d);border:1.5px solid var(--caramel);padding:0 12px;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;white-space:nowrap;min-height:40px;transition:background .2s,color .2s}
+.cep-help:hover{background:var(--caramel);color:#fff}
+.cep-box{text-align:left}
+.cep-box h2{text-align:center}
+.cep-sub{text-align:center;font-size:.86rem;color:var(--text-l);line-height:1.45;margin:6px 0 14px}
+.cs-row{display:flex;gap:8px;margin-bottom:8px}
+.cs-in{width:100%;min-width:0;border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--text);transition:border-color .2s}
+.cs-in:focus{outline:none;border-color:var(--caramel)}
+#cs-uf{width:64px;flex:none;text-transform:uppercase;text-align:center}
+.cs-go{width:100%;margin-top:4px;background:var(--brown);color:#fff;border:none;border-radius:50px;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.92rem;cursor:pointer;transition:background .2s}
+.cs-go:hover{background:var(--caramel-d)}
+.cs-go:disabled{opacity:.6;cursor:default}
+.cs-msg{font-size:.8rem;color:var(--text-l);margin:12px 0 6px;line-height:1.45;text-align:center}
+.cs-msg.err{color:var(--red,#E74C3C)}
+.cs-msg a{color:var(--caramel-d);font-weight:700}
+#cs-list{max-height:34vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.cs-item{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;background:var(--cream);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s,background .2s}
+.cs-item:hover{border-color:var(--caramel);background:#fff}
+.cs-item b{display:block;color:var(--brown);font-size:.88rem;line-height:1.25}
+.cs-item small{display:block;color:var(--text-l);font-size:.74rem;margin-top:2px}
+.cs-item .cs-cep{flex-shrink:0;font-weight:800;color:var(--caramel-d);font-size:.82rem}
 
 /* ── FORNADAS / PEÇA DE NOVO / SUGESTÕES / CUPOM / COMPARTILHAR ── */
 .oven-bar{display:none;background:#0E0E0E;color:#F0DC95;padding:9px 20px;text-align:center;font-size:.84rem;font-weight:600}
@@ -759,9 +780,10 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
         <div class="cform" id="delivery-fields">
           <div class="ff">
             <label><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>CEP de entrega</label>
-            <div style="display:flex;gap:8px">
-              <input id="f-cep" placeholder="00000-000" type="text" inputmode="numeric" maxlength="9" oninput="maskCep(this)" style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);transition:border-color .2s">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input id="f-cep" placeholder="00000-000" type="text" inputmode="numeric" maxlength="9" oninput="maskCep(this)" style="flex:1 1 130px;min-width:0;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);transition:border-color .2s">
               <button onclick="buscarCep()" style="background:var(--brown);color:#fff;border:none;padding:0 14px;border-radius:10px;cursor:pointer;font-size:.8rem;font-weight:600;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--caramel-d)'" onmouseout="this.style.background='var(--brown)'">Buscar</button>
+              <button type="button" class="cep-help" onclick="openCepSearch()">Não sei meu CEP</button>
             </div>
             <div id="cep-result" style="display:none;margin-top:6px;padding:8px 10px;background:var(--cream);border-radius:8px;border:1px solid var(--border);font-size:.78rem;color:var(--text-l)"></div>
             <div id="cep-taxa" style="display:none;margin-top:4px;font-size:.78rem;font-weight:700;color:var(--caramel-d)"></div>
@@ -820,6 +842,21 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 </div>
 
 <!-- CONFIRMAÇÃO DO PEDIDO -->
+<div class="okbg" id="cepbg" onclick="if(event.target===this)closeCepSearch()">
+  <div class="okbox cep-box" role="dialog" aria-modal="true" aria-labelledby="cep-ttl">
+    <h2 id="cep-ttl">Encontrar meu CEP</h2>
+    <p class="cep-sub">Digite o nome da rua ou avenida e escolha o seu endereço na lista.</p>
+    <div class="cs-row">
+      <input id="cs-city" class="cs-in" placeholder="Cidade" value="Belém" autocomplete="off">
+      <input id="cs-uf" class="cs-in" placeholder="UF" value="PA" maxlength="2" autocomplete="off">
+    </div>
+    <input id="cs-street" class="cs-in" placeholder="Rua ou avenida (ex.: Avenida Central)" autocomplete="off" onkeydown="if(event.key==='Enter')searchCepByStreet()">
+    <button type="button" class="cs-go" id="cs-go" onclick="searchCepByStreet()">Buscar meu CEP</button>
+    <div class="cs-msg" id="cs-msg"></div>
+    <div id="cs-list"></div>
+    <button type="button" class="ok-close" onclick="closeCepSearch()" style="display:block;margin:10px auto 0">Cancelar</button>
+  </div>
+</div>
 <div class="okbg" id="rvbg">
   <div class="okbox" role="dialog" aria-modal="true">
     <h2>Como foi sua experiência?</h2>
@@ -1189,6 +1226,21 @@ function cleanDesc(p){
 }
 
 function hasVars(p){ return parseVariations(p).length>0; }
+// Preço final de uma variação: usa v.price (absoluto); cai no formato antigo (preço base + price_delta)
+function varPrice(p, v){
+  if(!v) return p.price;
+  const n = Number(v.price);
+  if(v.price!=null && v.price!=='' && n>0) return n;
+  return p.price + (v.price_delta||0);
+}
+// Preço de um item guardado no carrinho/último pedido (recalcula pelo cadastro atual)
+function itemPrice(p, it){
+  if(it._var){
+    const v = parseVariations(p).find(x=>x.name===it._var);
+    if(v) return varPrice(p, v);
+  }
+  return p.price + (it._delta||0);
+}
 
 // Controle do card: "+" direto, contador − n + ou "+" que abre o modal (produtos com sabores)
 function ctlHTML(p){
@@ -1246,7 +1298,7 @@ function repeatLast(){
         const vars=parseVariations(p); const idx=vars.findIndex(v=>v.name===it._var);
         img = variationImage(p, idx>=0?vars[idx]:null, idx);
       }
-      cart.push({id:p.id,_key:it._key,name:it.name,price:p.price+(it._delta||0),qty,_delta:it._delta||0,image_url:img||p.image_url,emoji:p.emoji,_var:it._var||''});
+      cart.push({id:p.id,_key:it._key,name:it.name,price:itemPrice(p,it),qty,_delta:itemPrice(p,it)-p.price,image_url:img||p.image_url,emoji:p.emoji,_var:it._var||''});
     }
     n+=qty;
   });
@@ -1574,7 +1626,7 @@ function goSlide(n, fromVar){
       curVariation = vars[carSlide];
       curVariation._idx = carSlide;
       document.querySelectorAll('.var-chip').forEach((c,i)=>c.classList.toggle('on', i===carSlide));
-      const price = curProd.price + (curVariation.price_delta||0);
+      const price = varPrice(curProd, curVariation);
       $('mo-price').textContent = fp(price);
       $('mo-sub').textContent = fp(price * moQty);
     }
@@ -1610,10 +1662,12 @@ function buildVariations(p){
   if(!vars.length){ sec.style.display='none'; chips.innerHTML=''; return; }
   sec.style.display='';
   label.textContent = p.variation_label || 'Formato de Compra';
+  // mostra o preço final em cada opção quando elas têm preços diferentes
+  const showPrices = vars.some(v=>varPrice(p,v)!==p.price);
   chips.innerHTML = vars.map((v,i)=>{
     const isOut = v.stock===0;
     return `<span class="var-chip${isOut?' out':''}" data-idx="${i}"
-      onclick="${isOut?'':'selectVariation('+i+')'}">${esc(v.name)}${v.price_delta&&v.price_delta>0?' +'+fp(v.price_delta):''}</span>`;
+      onclick="${isOut?'':'selectVariation('+i+')'}">${esc(v.name)}${showPrices?' · '+fp(varPrice(p,v)):''}</span>`;
   }).join('');
   // Seleciona automaticamente o primeiro disponível
   const firstAvail = vars.findIndex(v=>v.stock!==0);
@@ -1642,7 +1696,7 @@ function selectVariation(idx){
     c.classList.toggle('on', i===idx);
   });
   // Atualiza preço mostrado
-  const price = p.price + (v.price_delta||0);
+  const price = varPrice(p, v);
   $('mo-price').textContent = fp(price);
   $('mo-sub').textContent   = fp(price * moQty);
   // Mostra a foto correspondente (mesma ordem das imagens)
@@ -1671,7 +1725,7 @@ function closeMOOut(e){ if(e.target===$('mbg')) closeModal(); }
 function chQ(d){
   moQty=Math.max(1,moQty+d);
   $('mo-qty').textContent=moQty;
-  const price = curProd.price + (curVariation?.price_delta||0);
+  const price = varPrice(curProd, curVariation);
   $('mo-sub').textContent=fp(price*moQty);
 }
 function addFromModal(){
@@ -1688,8 +1742,8 @@ function addFromModal(){
     toast(`Só temos ${curProd.stock} unidade(s) de ${curProd.name}`);
     return;
   }
-  const delta  = curVariation?.price_delta||0;
-  const price  = curProd.price + delta;
+  const price  = varPrice(curProd, curVariation);
+  const delta  = price - curProd.price;
   const suffix = curVariation ? ` – ${curVariation.name}` : '';
   const key    = String(curProd.id) + (curVariation ? '_'+curVariation.name : '');
   const vIdx   = curVariation && typeof curVariation._idx==='number' ? curVariation._idx : (curVariation ? parseVariations(curProd).findIndex(x=>x.name===curVariation.name) : -1);
@@ -1761,7 +1815,7 @@ function restoreCart(){
       img = variationImage(p, idx>=0?vars[idx]:null, idx);
     }
     if(!img) img = p.image_url;
-    return {...it, price:p.price+(it._delta||0), qty, image_url:img, emoji:p.emoji};
+    return {...it, price:itemPrice(p,it), qty, image_url:img, emoji:p.emoji};
   }).filter(Boolean);
 }
 
@@ -1953,6 +2007,49 @@ async function buscarCep(){
     result.textContent='Erro ao buscar CEP. Tente novamente.';
     result.style.color='var(--red,#E74C3C)';
   }
+}
+
+/* ═══ "NÃO SEI MEU CEP": busca o CEP pelo nome da rua (mesmo serviço ViaCEP) ═══
+ Fluxo: cliente digita cidade/UF/rua -> escolhe o endereço na lista -> o CEP é preenchido e a busca normal (endereço + taxa) roda sozinha. */
+let csData=[];
+function openCepSearch(){
+  $('cs-list').innerHTML=''; $('cs-msg').textContent=''; $('cs-msg').className='cs-msg';
+  const c=lsGet('pd_cs_city'), u=lsGet('pd_cs_uf');
+  if(c) $('cs-city').value=c; if(u) $('cs-uf').value=u;
+  $('cepbg').classList.add('open');            // não mexe no scroll: o checkout continua aberto por trás
+  setTimeout(()=>$('cs-street').focus(),60);
+}
+function closeCepSearch(){ $('cepbg').classList.remove('open'); }
+async function searchCepByStreet(){
+  const city=$('cs-city').value.trim(), uf=$('cs-uf').value.trim().toUpperCase(), street=$('cs-street').value.trim();
+  const msg=$('cs-msg'), list=$('cs-list'), btn=$('cs-go');
+  list.innerHTML=''; msg.className='cs-msg';
+  if(city.length<3 || !/^[A-Z]{2}$/.test(uf) || street.length<3){
+    msg.className='cs-msg err'; msg.textContent='Preencha a cidade, a UF e pelo menos 3 letras do nome da rua.'; return;
+  }
+  msg.textContent='Buscando...'; btn.disabled=true;
+  try{
+    const res=await fetch(`https://viacep.com.br/ws/${uf}/${encodeURIComponent(city)}/${encodeURIComponent(street)}/json/`);
+    const data=await res.json();
+    if(!Array.isArray(data) || !data.length){
+      msg.className='cs-msg err';
+      msg.innerHTML='Nenhum endereço encontrado. Tente só parte do nome (ex.: "Central") ou <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" rel="noopener">consulte nos Correios</a>.';
+      return;
+    }
+    lsSet('pd_cs_city',city); lsSet('pd_cs_uf',uf);
+    csData=data;
+    msg.textContent = data.length>=50 ? 'Muitos resultados. Se não achar o seu, digite o nome da rua completo.' : 'Toque no seu endereço:';
+    list.innerHTML=data.map((d,i)=>`<button type="button" class="cs-item" onclick="pickCep(${i})"><span><b>${esc(d.logradouro||street)}</b><small>${esc([d.bairro,d.complemento].filter(Boolean).join(' · '))}</small></span><span class="cs-cep">${esc(d.cep||'')}</span></button>`).join('');
+  }catch(e){
+    msg.className='cs-msg err'; msg.textContent='Não foi possível buscar agora. Tente de novo ou digite o seu CEP.';
+  }finally{ btn.disabled=false; }
+}
+function pickCep(i){
+  const d=csData[i]; if(!d||!d.cep) return;
+  closeCepSearch();
+  $('f-cep').value=d.cep; maskCep($('f-cep')); saveCustomer();
+  buscarCep();                                   // mesmo fluxo do botão "Buscar": endereço + taxa de entrega
+  toast('CEP preenchido! Complete o número no endereço.');
 }
 
 function calcularTaxa(cepData){
