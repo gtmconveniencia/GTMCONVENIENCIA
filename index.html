@@ -104,6 +104,12 @@ a.chip:hover{color:var(--caramel-l)}
 .ice-card .ice-s{font-size:.76rem;color:#2E6A8E;margin-top:2px}
 .ice-card button{background:#1A5276;color:#fff;border:none;border-radius:50px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:background .2s}
 .ice-card button:hover{background:#154360}
+.ice-wrap{background:#EAF4FB;border:1.5px solid #AED6F1;border-radius:12px;padding:10px 12px 4px;margin-bottom:10px}
+.ice-wrap .ice-h{font-weight:800;color:#1A5276;font-size:.92rem;margin-bottom:4px}
+.ice-wrap .ice-card{background:none;border:none;border-top:1px solid #D0E4F2;border-radius:0;padding:9px 0;margin:0}
+.ice-wrap .ice-h + .ice-card{border-top:none}
+.ice-wrap .ice-card .ice-t{font-size:.84rem;font-weight:700}
+.ice-wrap .ice-card .ice-s{font-weight:700;font-size:.8rem}
 
 /* ── PROMO BANNERS ── */
 .banners-section{padding:20px 20px 0;max-width:1100px;margin:0 auto}
@@ -613,6 +619,9 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
   </div>
 </div>
 
+<!-- AVISO / ANÚNCIO (editado no admin em Configurações) -->
+<div class="announce" id="announce" role="status" aria-live="polite"></div>
+
 <div class="del-bar" id="del-bar"> <strong>Entrega grátis</strong> das 16h às 19h</div>
 
 <!-- AVISO DE FECHAMENTO (aparece só nas últimas 2h de funcionamento) -->
@@ -976,6 +985,7 @@ async function init(){
     subscribeRealtime();
     initExtras();
     loadStoreExtras();
+    loadTopSold();
 
     // Recalcula a taxa se o cliente voltou com CEP salvo
     if(orderType==='entrega' && $('f-cep').value.replace(/\D/g,'').length===8) buscarCep();
@@ -1218,6 +1228,35 @@ const HL_MAP = {
   'best':  {label:'MAIS PEDIDO',   cls:'mais_vendido'},
 };
 
+/* ═══ MAIS PEDIDOS AUTOMÁTICO ═══
+   Os mais vendidos (últimos 30 dias) vêm da função top_products do Supabase (ver mais_pedidos.sql).
+   Admin: "Mais pedido (fixar)" = sempre aparece; "Nunca mostrar em Mais pedidos" = nunca aparece. */
+const BEST_MAX = 8;       // quantos cards na seção
+const BEST_MIN_SOLD = 2;  // mínimo de unidades vendidas para entrar sozinho
+let topSold = [];         // [{product_id, qty}] ordenado do mais vendido ao menos
+async function loadTopSold(){
+  try{
+    const {data,error} = await sb.rpc('top_products',{days:30, lim:20});
+    if(error || !Array.isArray(data)) return;
+    topSold = data;
+    renderProducts();
+  }catch(_){}
+}
+function bestList(){
+  const okP = p => p && p.is_active!==false && p.stock!==0;
+  const manual = products.filter(p=>p.highlight==='best' && okP(p));
+  const used = new Set(manual.map(p=>String(p.id)));
+  const auto = [];
+  topSold.forEach(t=>{
+    if(Number(t.qty) < BEST_MIN_SOLD) return;
+    const p = products.find(x=>String(x.id)===String(t.product_id));
+    if(!okP(p) || p.highlight==='hide_best' || used.has(String(p.id))) return;
+    used.add(String(p.id)); auto.push(p);
+  });
+  return manual.concat(auto).slice(0,BEST_MAX);
+}
+function bestIds(){ return new Set(bestList().map(p=>String(p.id))); }
+
 // Descrição sem o trecho [[...]] de variações embutidas
 function cleanDesc(p){
   let d = p.description||'';
@@ -1277,7 +1316,7 @@ function topHTML(){
     const resumo=ok.slice(0,3).map(i=>`${i.qty}x ${esc(i.name)}`).join(', ')+(ok.length>3?` e mais ${ok.length-3}`:'');
     h+=`<div class="reorder"><div class="r-txt"><div class="r-t">Pedir de novo?</div><div class="r-s">Seu último pedido: ${resumo}</div></div><button onclick="repeatLast()">Repetir pedido</button><button class="r-x" onclick="dismissReorder(this)" aria-label="Remover este lembrete" title="Remover"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`;
   }
-  const best=products.filter(p=>p.highlight==='best'&&p.is_active!==false&&p.stock!==0).slice(0,8);
+  const best=bestList();
   if(best.length){
     h+=`<div class="product-section"><div class="sec-hdr"><h2 class="sec-title">${ico('flame')} Mais pedidos</h2><div class="sec-line"></div></div><div class="grid">${best.map(p=>cardHTML(p)).join('')}</div></div>`;
   }
@@ -1336,6 +1375,17 @@ const SG_COMBO = {
   bbq    : ['beer','ice','soda','bbq'],
   snack  : ['soda','beer','ice']
 };
+// Gelo na sacola: qual tipo de gelo oferecer, conforme a categoria do produto que está na sacola.
+// Categorias que não estão aqui (combo, mercado, cigarro, gelo saborizado...) não recebem oferta de gelo.
+// cubo = gelo em cubos | sabor = gelo saborizado
+const ICE_RULES = [
+  {re:/whisk|destilad/,     kinds:['cubo','sabor']},   // Whiskies e Destilados
+  {re:/isoton|energet/,     kinds:['cubo','sabor']},   // Isotônicos e Energéticos
+  {re:/cerveja/,            kinds:['cubo']},           // Cervejas
+  {re:/^bebidas?$/,         kinds:['cubo']}            // Bebidas
+];
+// Gelo em escama, gelo de coco etc. não entram na oferta (só cubo e saborizado)
+const iceKind = p => { const n=norm(p.name); return /saboriz/.test(n) ? 'sabor' : (/cubo/.test(n) ? 'cubo' : null); };
 function sgTags(name, catId){
   const cat = categories.find(c=>String(c.id)===String(catId));
   const t = norm(name)+' | '+norm(cat?cat.name:'');
@@ -1355,26 +1405,40 @@ function renderSugg(){
     sgTags(i.name, p?p.category_id:'').forEach(t=>cartTags.add(t));
   });
 
-  // Tem cerveja ou destilado na sacola e nenhum gelo? Oferece o gelo em destaque
-  const ice=((cartTags.has('beer')||cartTags.has('spirit')) && !cartTags.has('ice'))
-    ? products.filter(p=>p.is_active!==false && p.stock!==0 && /gelo/.test(norm(p.name))).sort((a,b)=>a.price-b.price)[0]
-    : null;
-  const iceHTML=ice ? `<div class="ice-card">
+  // Gelo: só para as categorias de ICE_RULES, e mostra TODOS os tipos liberados para elas
+  const iceKinds=new Set();
+  if(!cartTags.has('ice')){
+    cart.forEach(i=>{
+      const pr=products.find(x=>x.id===i.id);
+      const cn=norm(categories.find(c=>String(c.id)===String(pr&&pr.category_id))?.name||'').trim();
+      ICE_RULES.forEach(r=>{ if(r.re.test(cn)) r.kinds.forEach(k=>iceKinds.add(k)); });
+    });
+  }
+  // 1 produto de cada tipo liberado (cubo, saborizado); o escolhido gira (ex.: o sabor) quando a sacola muda
+  const iceSeed=sgSeed(cart.map(i=>i._key).sort().join('|'));
+  const iceList=['cubo','sabor'].filter(k=>iceKinds.has(k)).map(k=>{
+    const pool=products.filter(p=>p.is_active!==false && p.stock!==0 && !inCart.has(p.id) && /gelo/.test(norm(p.name)) && iceKind(p)===k)
+      .sort((a,b)=>a.id>b.id?1:-1);
+    return pool.length ? pool[sgSeed(iceSeed+'#'+k)%pool.length] : null;
+  }).filter(Boolean);
+  const iceIds=new Set(iceList.map(p=>p.id));
+  const iceRow=ice=>`<div class="ice-card">
       <div class="ice-img"><span>${ico('bag','ph')}</span>${ice.image_url?`<img src="${esc(ice.image_url)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>
-      <div class="ice-txt"><div class="ice-t">Falta gelo? +${fp(ice.price)}</div><div class="ice-s">${esc(ice.name)}</div></div>
+      <div class="ice-txt"><div class="ice-t">${esc(ice.name)}</div><div class="ice-s">+${fp(ice.price)}</div></div>
       <button type="button" onclick="quickAdd(${ice.id})" aria-label="Adicionar ${esc(ice.name)}">Adicionar</button>
-    </div>` : '';
+    </div>`;
+  const iceHTML=iceList.length ? `<div class="ice-wrap"><div class="ice-h">Falta gelo?</div>${iceList.map(iceRow).join('')}</div>` : '';
 
   // Candidatos: ativos, com estoque, fora da sacola, sem sabores (esses abrem o modal)
   const seed=sgSeed(cart.map(i=>i._key).sort().join('|'));
   const cand=products
-    .filter(p=>p.is_active!==false && p.stock!==0 && !inCart.has(p.id) && !hasVars(p) && !(ice && p.id===ice.id))
+    .filter(p=>p.is_active!==false && p.stock!==0 && !inCart.has(p.id) && !hasVars(p) && !iceIds.has(p.id) && !/gelo/.test(norm(p.name)))
     .map(p=>({p, tags:sgTags(p.name,p.category_id), r:sgSeed(seed+'#'+p.id)}));
 
   // Prioridade de cada tipo que combina com a sacola (soma quando vários itens pedem o mesmo)
   const weight={};
   cartTags.forEach(ct=>(SG_COMBO[ct]||[]).forEach((tag,idx)=>{
-    if(tag==='ice' && ice) return;                    // o gelo já está no card azul
+    if(tag==='ice') return;                           // gelo só aparece no card azul, conforme ICE_RULES
     weight[tag]=(weight[tag]||0)+(4-idx);
   }));
   const order=Object.keys(weight).sort((a,b)=>weight[b]-weight[a]);
@@ -1503,7 +1567,7 @@ function refreshCtls(){
 
 function cardHTML(p){
   const out=p.stock===0;
-  const hl=HL_MAP[p.highlight];
+  const hl=HL_MAP[p.highlight] || (bestIds().has(String(p.id)) ? HL_MAP.best : null);
   const badge=hl?hl.label:(p.badge||'');
   const badgeCls=hl?hl.cls:'';
   return `<div class="pcard" data-cat="${esc(p.category_id)}" ${!out?`onclick="openModal(${p.id})"`:''} ${out?'style="cursor:default"':''}>
