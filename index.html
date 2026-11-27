@@ -104,6 +104,9 @@ a.chip:hover{color:var(--caramel-l)}
 .ice-card .ice-s{font-size:.76rem;color:#2E6A8E;margin-top:2px}
 .ice-card button{background:#1A5276;color:#fff;border:none;border-radius:50px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap;transition:background .2s}
 .ice-card button:hover{background:#154360}
+.prize-ban{display:none;background:linear-gradient(90deg,#B7791F,#D69E2E);color:#fff;text-align:center;font-size:.84rem;font-weight:600;padding:9px 16px;cursor:pointer}
+.prize-row{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#E9F7EF;border:1.5px solid #A9DFBF;color:#1E8449;border-radius:12px;padding:10px 12px;font-size:.84rem;line-height:1.35}
+.prize-row button{border:none;background:#1E8449;color:#fff;border-radius:9px;padding:7px 13px;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap}
 .ice-wrap{background:#EAF4FB;border:1.5px solid #AED6F1;border-radius:12px;padding:10px 12px 4px;margin-bottom:10px}
 .ice-wrap .ice-h{font-weight:800;color:#1A5276;font-size:.92rem;margin-bottom:4px}
 .ice-wrap .ice-card{background:none;border:none;border-top:1px solid #D0E4F2;border-radius:0;padding:9px 0;margin:0}
@@ -621,6 +624,7 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 
 <!-- AVISO / ANÚNCIO (editado no admin em Configurações) -->
 <div class="announce" id="announce" role="status" aria-live="polite"></div>
+<div class="prize-ban" id="prize-ban" onclick="openCart()"></div>
 
 <div class="del-bar" id="del-bar"> <strong>Entrega grátis</strong> das 16h às 19h</div>
 
@@ -821,6 +825,7 @@ body.cart-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
           </div>
         </div>
         <div class="ff troco-f" id="troco-f"><label><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V8a2 2 0 00-2-2H5a2 2 0 010-4h13M3 5v14a2 2 0 002 2h15a1 1 0 001-1v-4"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>Troco para quanto?</label><input id="f-troco" placeholder="Ex: R$ 50,00" type="text" inputmode="decimal"></div>
+        <div class="ff" id="prize-box" style="display:none"></div>
         <div class="ff" id="cupom-box" style="display:none"><label><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 010 6v2a2 2 0 002 2h16a2 2 0 002-2v-2a3 3 0 010-6V7a2 2 0 00-2-2H4a2 2 0 00-2 2z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>Cupom de desconto</label>
           <div class="cupom-row"><input id="f-cupom" placeholder="Digite o cupom" type="text" autocomplete="off" maxlength="20"><button type="button" onclick="aplicarCupom()">Aplicar</button></div>
           <div class="cupom-msg" id="cupom-msg" style="display:none"></div>
@@ -1474,12 +1479,81 @@ function renderSugg(){
 }
 
 /* ═══ CUPOM ═══ */
-function descontoNow(){
-  if(!cupom) return 0;
+/* ═══ PRÊMIO FIDELIDADE AUTOMÁTICO ═══
+   O admin escolhe o tipo (desconto R$, desconto %, produto grátis). Quando o cliente tem prêmio,
+   ele entra sozinho na sacola e é consumido no envio do pedido (use_loyalty_reward). */
+let fidRewards=0, prizeOff=false;
+function prizeCfg(){
+  const t=settings.loyalty_reward_type||'text';
+  if(!settings.loyalty_enabled||t==='text') return null;
+  const v=Number(settings.loyalty_reward_value)||0, cap=Number(settings.loyalty_reward_cap)||0;
+  if(t==='produto'){ const p=products.find(x=>String(x.id)===String(settings.loyalty_reward_product_id)); return p?{t,p}:null; }
+  if(t==='valor'&&v>0) return {t,v};
+  if(t==='percent'&&v>0) return {t,v:Math.min(100,v),cap};
+  return null;
+}
+function prizeLabel(){
+  const c=prizeCfg(); if(!c) return settings.loyalty_reward||'um prêmio';
+  if(c.t==='valor') return fp(c.v)+' de desconto';
+  if(c.t==='percent') return c.v+'% de desconto'+(c.cap>0?' (até '+fp(c.cap)+')':'');
+  return c.p.name+' grátis';
+}
+function prizeActive(){ return fidRewards>0 && !prizeOff && !!prizeCfg(); }
+function discountsNow(){
   const sub=cart.reduce((a,i)=>a+i.price*i.qty,0);
-  if(cupom.min && sub<cupom.min) return 0;
-  const d = cupom.tipo==='percent' ? sub*cupom.valor/100 : cupom.valor;
-  return Math.min(sub, Math.round(d*100)/100);
+  let dc=0;
+  if(cupom && !(cupom.min&&sub<cupom.min)){
+    const d=cupom.tipo==='percent'?sub*cupom.valor/100:cupom.valor;
+    dc=Math.min(sub,Math.round(d*100)/100);
+  }
+  let dp=0;
+  if(prizeActive()){
+    const c=prizeCfg(), base=sub-dc;
+    if(c.t==='valor') dp=Math.min(base,c.v);
+    else if(c.t==='percent'){ dp=base*c.v/100; if(c.cap>0) dp=Math.min(dp,c.cap); dp=Math.min(base,Math.round(dp*100)/100); }
+    else { const it=cart.find(i=>String(i.id)===String(c.p.id)); if(it) dp=Math.min(base,it.price); }
+  }
+  return {sub,dc,dp,total:Math.round((dc+dp)*100)/100};
+}
+function descontoNow(){ return discountsNow().total; }
+function discountLabel(){
+  const d=discountsNow();
+  if(d.dc>0&&d.dp>0) return `${cupom.code} + Fidelidade`;
+  if(d.dp>0) return 'Fidelidade';
+  return d.dc>0?cupom.code:'';
+}
+// Prêmio "produto grátis": coloca o produto na sacola sozinho (uma vez). Se o cliente tirar, não volta a entrar.
+let prizeAdded=false;
+function autoAddPrize(){
+  if(prizeAdded||!prizeActive()) return;
+  const c=prizeCfg(); if(!c||c.t!=='produto') return;
+  const p=c.p;
+  if(cart.some(i=>String(i.id)===String(p.id))){ prizeAdded=true; return; }
+  if(p.is_active===false||p.stock===0||hasVars(p)) return;   // sem estoque / com variações: fica o botão "Adicionar"
+  prizeAdded=true;
+  cart.push({id:p.id,_key:String(p.id),name:p.name,price:p.price,qty:1,_delta:0,image_url:p.image_url,emoji:p.emoji});
+  updateCart();
+  toast(` Seu prêmio foi adicionado: ${p.name}`);
+}
+function prizeToggle(off){ prizeOff=off; if(!off){ prizeAdded=false; autoAddPrize(); } updateTotals(); }
+function prizeAddProduct(){
+  const c=prizeCfg(); if(!c||c.t!=='produto') return;
+  if(hasVars(c.p)) openModal(c.p.id); else quickAdd(c.p.id);
+}
+function renderPrizeBox(){
+  const box=$('prize-box'), ban=$('prize-ban'); if(!box) return;
+  const c=prizeCfg(), has=!!settings.loyalty_enabled && fidRewards>0;
+  if(ban){
+    if(has){ ban.style.display='block'; ban.innerHTML=`${ico('gift')} Você ganhou um prêmio: <b>${esc(prizeLabel())}</b>! ${c?'Ele entra sozinho na sua sacola.':'Avise ao fazer o pedido.'}`; }
+    else ban.style.display='none';
+  }
+  if(!has||!c){ box.style.display='none'; return; }
+  const lbl=esc(prizeLabel());
+  let html;
+  if(prizeOff) html=`<div class="prize-row"><span>${ico('gift')} Prêmio fidelidade disponível: <b>${lbl}</b></span><button type="button" onclick="prizeToggle(false)">Usar</button></div>`;
+  else if(c.t==='produto' && !cart.some(i=>String(i.id)===String(c.p.id))) html=`<div class="prize-row"><span>${ico('gift')} Seu prêmio: <b>${lbl}</b></span><button type="button" onclick="prizeAddProduct()">Adicionar</button></div>`;
+  else html=`<div class="prize-row"><span>${ico('gift')} Prêmio fidelidade aplicado: <b>${lbl}</b></span><button type="button" onclick="prizeToggle(true)">Remover</button></div>`;
+  box.innerHTML=html; box.style.display='';
 }
 async function aplicarCupom(){
   const code=$('f-cupom').value.trim().toUpperCase();
@@ -1514,13 +1588,15 @@ async function loadStoreExtras(){
 }
 async function refreshFid(){
   const el=$('fid-card'); if(!el) return;
-  if(!settings.loyalty_enabled){ el.style.display='none'; return; }
+  if(!settings.loyalty_enabled){ el.style.display='none'; fidRewards=0; updateTotals(); return; }
   const need=Math.max(1,settings.loyalty_orders_required||10), reward=settings.loyalty_reward||'um prêmio';
   const d=$('f-phone').value.replace(/\D/g,'');
   let st=0, rw=0;
   if(d.length>=10){ try{ const {data}=await sb.rpc('get_loyalty_card',{p_phone:d}); if(data&&data[0]){ st=data[0].stamps; rw=data[0].rewards_available; } }catch(_){} }
+  fidRewards=rw||0; if(!fidRewards){ prizeOff=false; prizeAdded=false; }
+  autoAddPrize(); updateTotals();
   const dots=Array.from({length:Math.min(need,20)},(_,i)=>`<i class="${i<st?'on':''}"></i>`).join('');
-  const txt = rw>0 ? `${ico('gift')} Você tem <b>${rw}</b> prêmio${rw>1?'s':''}: ${esc(reward)}! Avise ao fazer o pedido.`
+  const txt = rw>0 ? `${ico('gift')} Você tem <b>${rw}</b> prêmio${rw>1?'s':''}: ${esc(prizeLabel())}! ${prizeCfg()?'Ele entra sozinho na sua sacola.':'Avise ao fazer o pedido.'}`
     : d.length>=10 ? `${st} de ${need} · faltam ${Math.max(1,need-st)} pedido${need-st>1?'s':''} para ganhar ${esc(reward)}`
     : `A cada ${need} pedidos entregues você ganha ${esc(reward)}. Informe seu WhatsApp para acompanhar.`;
   el.innerHTML=`<div class="fid-t">Cartão fidelidade</div><div class="fid-d">${dots}</div><div>${txt}</div>`;
@@ -1669,13 +1745,24 @@ function buildCarousel(p){
     slides.innerHTML = `<div class="slide"><span>${ico('bread','ph')}</span></div>`;
     dots.innerHTML = ''; prev.style.display='none'; next.style.display='none';
   } else {
-    slides.innerHTML = imgs.map(url=>`<div class="slide"><img src="${esc(url)}" alt="${esc(p.name)}" loading="lazy"></div>`).join('');
+    // placeholder fica por trás; se a foto não carregar, ele aparece (nunca o texto alternativo gigante)
+    slides.innerHTML = imgs.map(url=>`<div class="slide"><span>${ico('bread','ph')}</span><img src="${esc(url)}" alt="" aria-label="${esc(p.name)}" onerror="slideImgErr(this)"></div>`).join('');
     dots.innerHTML   = imgs.map((_,i)=>`<span class="carr-dot ${i===0?'on':''}" onclick="goSlide(${i})"></span>`).join('');
     const many = imgs.length > 1;
     prev.style.display = many ? 'flex' : 'none';
     next.style.display = many ? 'flex' : 'none';
   }
   slides.style.transform = 'translateX(0)';
+}
+// Foto que não carregou: tenta de novo uma vez (a URL pode ter falhado na hora) e, se falhar, mostra o placeholder
+function slideImgErr(img){
+  if(!img.dataset.retry){
+    img.dataset.retry='1';
+    const u=img.getAttribute('src');
+    setTimeout(()=>{ img.src = u.includes('?') ? u : u+'?_r='+Date.now(); },1200);
+    return;
+  }
+  img.remove();
 }
 function goSlide(n, fromVar){
   if(!carImages.length) return;
@@ -2152,10 +2239,11 @@ function updateTotals(){
   $('taxa-val').textContent = fee>0 ? fp(fee) : 'Grátis';
   const desc = descontoNow();
   $('desc-row').style.display = desc>0 ? 'flex' : 'none';
-  $('desc-lbl').textContent = cupom ? `Desconto (${cupom.code})` : 'Desconto';
+  $('desc-lbl').textContent = desc>0 ? `Desconto (${discountLabel()})` : 'Desconto';
   $('desc-val').textContent = '− '+fp(desc);
   $('total-final-val').textContent = fp(sub-desc+fee);
   $('total-final-row').style.display = (showFee||desc>0) ? 'flex' : 'none';
+  renderPrizeBox();
 }
 
 /* ═══ PIX COPIA E COLA (BR Code) ═══ */
@@ -2208,7 +2296,7 @@ function showOk(o){
 
   let sum=o.items.map(i=>`<div class="ln"><span>${i.qty}x ${esc(i.name)}</span><span>${fp(i.price*i.qty)}</span></div>`).join('');
   if(o.fee>0) sum+=`<div class="ln"><span>Taxa de entrega</span><span>${fp(o.fee)}</span></div>`;
-  if(o.desc>0) sum+=`<div class="ln"><span>Desconto (${esc(o.cupomCode)})</span><span>− ${fp(o.desc)}</span></div>`;
+  if(o.desc>0) sum+=`<div class="ln"><span>Desconto${o.cupomCode?' ('+esc(o.cupomCode)+')':''}</span><span>− ${fp(o.desc)}</span></div>`;
   sum+=`<div class="ln tot"><span>Total · ${esc(PAY_LABEL[o.pay]||o.pay)}</span><span>${fp(o.total)}</span></div>`;
   if(o.pay==='dinheiro'&&o.changeFor) sum+=`<div class="ln"><span>Troco para</span><span>${fp(o.changeFor)}</span></div>`;
   $('ok-sum').innerHTML=sum;
@@ -2267,7 +2355,8 @@ async function sendOrder(){
 
   const sub=cart.reduce((a,i)=>a+i.price*i.qty,0);
   const taxa=feeNow();
-  const desc=descontoNow();
+  const dd=discountsNow(), desc=dd.total, dc=dd.dc, dp=dd.dp;
+  const dLabel=discountLabel();
   const total=sub-desc+taxa;
 
   let changeFor=null;
@@ -2284,26 +2373,36 @@ async function sendOrder(){
   const code=genCode();
   const notesArr=[`Pedido #${code}`, delivery?'ENTREGA':'RETIRADA NO BALCÃO'];
   if(taxa>0) notesArr.push(`Taxa de entrega: ${fp(taxa)}`);
-  if(desc>0) notesArr.push(`Cupom ${cupom.code}: -${fp(desc)}`);
+  if(dc>0) notesArr.push(`Cupom ${cupom.code}: -${fp(dc)}`);
+  if(dp>0) notesArr.push(`Prêmio fidelidade: -${fp(dp)} (${prizeLabel()})`);
   if(delivery&&cep) notesArr.push(`CEP: ${cep}`);
   if(closed) notesArr.push('Feito com a loja fechada');
   if(obs) notesArr.push(`Obs: ${obs}`);
 
+  let prizeUsed=false;
   sending=true;
   const btn=$('btn-send'); btn.disabled=true; $('btn-send-txt').textContent='Enviando...';
   try{
+    if(dp>0){ // gasta o prêmio no servidor (uso único)
+      const u=await sb.rpc('use_loyalty_reward',{p_phone:phoneDigits});
+      if(u.error||u.data!==true){ const er=new Error('prize'); er.prize=true; throw er; }
+      prizeUsed=true;
+    }
     const row={
       customer_name:name, address:delivery?addr:'RETIRADA NO BALCÃO', customer_phone:phone,
       payment_method:payVal, change_for:changeFor,
       items, total, status:'novo',
       notes:notesArr.join(' | '),
-      coupon_code:desc>0?cupom.code:null, discount:desc
+      coupon_code:dc>0?cupom.code:null, discount:desc
     };
     let r=await sb.from('orders').insert(row);
     if(r.error && /coupon_code|discount/.test(r.error.message||'')){ delete row.coupon_code; delete row.discount; r=await sb.from('orders').insert(row); }
     if(r.error) throw r.error;
+    if(prizeUsed){ try{ sb.rpc('confirm_loyalty_reward',{p_phone:phoneDigits}); }catch(_){} }
   }catch(e){
     console.error(e);
+    if(prizeUsed){ try{ await sb.rpc('refund_loyalty_reward',{p_phone:phoneDigits}); }catch(_){} }
+    if(e&&e.prize){ fidRewards=0; updateTotals(); alert('Seu prêmio de fidelidade não está mais disponível (já foi usado). Confira os valores e finalize novamente.'); sending=false; btn.disabled=false; $('btn-send-txt').textContent='Finalizar pedido'; return; }
     alert('Não foi possível enviar seu pedido. Verifique sua conexão e tente novamente.');
     sending=false; btn.disabled=false; $('btn-send-txt').textContent='Finalizar pedido';
     return;
@@ -2323,7 +2422,8 @@ async function sendOrder(){
   msg+=`\n\n*Itens:*\n`;
   cart.forEach(i=>{ msg+=`▸ ${i.qty}x ${i.name} — ${fp(i.price*i.qty)}\n`; });
   msg+=`\n*Subtotal: ${fp(sub)}*`;
-  if(desc>0) msg+=`\n*Desconto (${cupom.code}): -${fp(desc)}*`;
+  if(dc>0) msg+=`\n*Desconto (${cupom.code}): -${fp(dc)}*`;
+  if(dp>0) msg+=`\n*Prêmio fidelidade (${prizeLabel()}): -${fp(dp)}*`;
   if(taxa>0) msg+=`\n*Taxa de entrega: ${fp(taxa)}*`;
   msg+=`\n*Total: ${fp(total)}*\n*Pagamento:* ${PAY_LABEL[payVal]||payVal}`;
   if(payVal==='dinheiro'&&changeFor) msg+=` (troco para ${fp(changeFor)})`;
@@ -2331,7 +2431,7 @@ async function sendOrder(){
   const wn=(settings.whatsapp_number||settings.phone||'5591981120535').replace(/\D/g,'');
   const wppUrl=`https://wa.me/${wn}?text=${encodeURIComponent(msg)}`;
 
-  const snapshot={code,items:cart.map(i=>({name:i.name,price:i.price,qty:i.qty})),fee:taxa,desc,cupomCode:desc>0?cupom.code:'',total,pay:payVal,changeFor,type:orderType,addr,closed,wppUrl};
+  const snapshot={code,items:cart.map(i=>({name:i.name,price:i.price,qty:i.qty})),fee:taxa,desc,cupomCode:dLabel,total,pay:payVal,changeFor,type:orderType,addr,closed,wppUrl};
 
   // Guarda os dados do cliente para o próximo pedido
   saveCustomer();
@@ -2340,6 +2440,7 @@ async function sendOrder(){
   lsSet('pd_last', JSON.stringify(cart.map(i=>({id:i.id,_key:i._key,name:i.name,qty:i.qty,_delta:i._delta||0,image_url:i.image_url,_var:i._var||''}))));
   lsSet('pd_ordered','1');
   cupom=null; $('f-cupom').value=''; $('cupom-msg').style.display='none';
+  if(prizeUsed){ fidRewards=Math.max(0,fidRewards-1); prizeAdded=false; setTimeout(refreshFid,1500); }
 
   // Limpa o pedido (nome, telefone, endereço e CEP ficam lembrados)
   cart=[];
